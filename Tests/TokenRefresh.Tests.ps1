@@ -3,37 +3,43 @@ BeforeAll {
 }
 
 Describe 'Test-GitHubSessionTokenNeedsRefresh' {
-    It 'Returns $false for PAT sessions (no JwtClientId)' {
+    It 'Returns $false for PAT sessions (no ClientId)' {
         $session = New-GithubSession -OrganizationName 'TestOrg' -Token 'ghp_faketoken'
         Test-GitHubSessionTokenNeedsRefresh -Session $session | Should -Be $false
     }
 
     It 'Returns $false when token has more than 10 minutes remaining' {
-        $session = New-GithubSession -OrganizationName 'TestOrg' -Token 'ghs_faketoken'
-        $session | Add-Member -NotePropertyName 'JwtClientId' -NotePropertyValue 'Iv1.abc123'
-        $session | Add-Member -NotePropertyName 'JwtPrivateKeyPath' -NotePropertyValue '/tmp/fake.pem'
-        $session | Add-Member -NotePropertyName 'JwtAppId' -NotePropertyValue '12345'
-        $session | Add-Member -NotePropertyName 'TokenExpiresAt' -NotePropertyValue ([System.DateTimeOffset]::UtcNow.AddMinutes(30))
+        $session = New-GithubSession `
+            -OrganizationName 'TestOrg' `
+            -Token 'ghs_faketoken' `
+            -ClientId 'Iv1.abc123' `
+            -InstallationId '12345' `
+            -PrivateKeyPath '/tmp/fake.pem' `
+            -TokenExpiresAt ([System.DateTimeOffset]::UtcNow.AddMinutes(30))
 
         Test-GitHubSessionTokenNeedsRefresh -Session $session | Should -Be $false
     }
 
     It 'Returns $true when token expires within 10 minutes' {
-        $session = New-GithubSession -OrganizationName 'TestOrg' -Token 'ghs_faketoken'
-        $session | Add-Member -NotePropertyName 'JwtClientId' -NotePropertyValue 'Iv1.abc123'
-        $session | Add-Member -NotePropertyName 'JwtPrivateKeyPath' -NotePropertyValue '/tmp/fake.pem'
-        $session | Add-Member -NotePropertyName 'JwtAppId' -NotePropertyValue '12345'
-        $session | Add-Member -NotePropertyName 'TokenExpiresAt' -NotePropertyValue ([System.DateTimeOffset]::UtcNow.AddMinutes(5))
+        $session = New-GithubSession `
+            -OrganizationName 'TestOrg' `
+            -Token 'ghs_faketoken' `
+            -ClientId 'Iv1.abc123' `
+            -InstallationId '12345' `
+            -PrivateKeyPath '/tmp/fake.pem' `
+            -TokenExpiresAt ([System.DateTimeOffset]::UtcNow.AddMinutes(5))
 
         Test-GitHubSessionTokenNeedsRefresh -Session $session | Should -Be $true
     }
 
     It 'Returns $true when token is already expired' {
-        $session = New-GithubSession -OrganizationName 'TestOrg' -Token 'ghs_faketoken'
-        $session | Add-Member -NotePropertyName 'JwtClientId' -NotePropertyValue 'Iv1.abc123'
-        $session | Add-Member -NotePropertyName 'JwtPrivateKeyPath' -NotePropertyValue '/tmp/fake.pem'
-        $session | Add-Member -NotePropertyName 'JwtAppId' -NotePropertyValue '12345'
-        $session | Add-Member -NotePropertyName 'TokenExpiresAt' -NotePropertyValue ([System.DateTimeOffset]::UtcNow.AddMinutes(-5))
+        $session = New-GithubSession `
+            -OrganizationName 'TestOrg' `
+            -Token 'ghs_faketoken' `
+            -ClientId 'Iv1.abc123' `
+            -InstallationId '12345' `
+            -PrivateKeyPath '/tmp/fake.pem' `
+            -TokenExpiresAt ([System.DateTimeOffset]::UtcNow.AddMinutes(-5))
 
         Test-GitHubSessionTokenNeedsRefresh -Session $session | Should -Be $true
     }
@@ -68,9 +74,9 @@ Describe 'New-GitHubJwtSession session properties' {
         try {
             $session = New-GitHubJwtSession -OrganizationName 'TestOrg' -ClientId 'Iv1.testclient' -PrivateKeyPath $tempPem -AppId '99999'
 
-            $session.JwtClientId | Should -Be 'Iv1.testclient'
-            $session.JwtPrivateKeyPath | Should -Be $tempPem
-            $session.JwtAppId | Should -Be '99999'
+            $session.ClientId | Should -Be 'Iv1.testclient'
+            $session.PrivateKeyPath | Should -Be $tempPem
+            $session.InstallationId | Should -Be '99999'
             $session.TokenExpiresAt | Should -Not -BeNullOrEmpty
             $session.Headers['Authorization'] | Should -Be 'Bearer ghs_mockinstallationtoken'
         }

@@ -20,6 +20,10 @@
 | ![GH_AppInstallation](Icons/gh_appinstallation.png) | [GH_AppInstallation](NodeDescriptions/GH_AppInstallation.md) | GitHub App Installation |
 | ![GH_Branch](Icons/gh_branch.png) | [GH_Branch](NodeDescriptions/GH_Branch.md) | GitHub Branch |
 | ![GH_BranchProtectionRule](Icons/gh_branchprotectionrule.png) | [GH_BranchProtectionRule](NodeDescriptions/GH_BranchProtectionRule.md) | GitHub Branch Protection Rule |
+| ![GH_Enterprise](Icons/gh_enterprise.png) | [GH_Enterprise](NodeDescriptions/GH_Enterprise.md) | GitHub Enterprise |
+| ![GH_EnterpriseManagedUser](Icons/gh_enterprisemanageduser.png) | [GH_EnterpriseManagedUser](NodeDescriptions/GH_EnterpriseManagedUser.md) | GitHub Enterprise Managed User |
+| ![GH_EnterpriseRole](Icons/gh_enterpriserole.png) | [GH_EnterpriseRole](NodeDescriptions/GH_EnterpriseRole.md) | GitHub Enterprise Role |
+| ![GH_EnterpriseTeam](Icons/gh_enterpriseteam.png) | [GH_EnterpriseTeam](NodeDescriptions/GH_EnterpriseTeam.md) | GitHub Enterprise Team |
 | ![GH_Environment](Icons/gh_environment.png) | [GH_Environment](NodeDescriptions/GH_Environment.md) | GitHub Environment |
 | ![GH_EnvironmentSecret](Icons/gh_environmentsecret.png) | [GH_EnvironmentSecret](NodeDescriptions/GH_EnvironmentSecret.md) | GitHub Environment Secret |
 | ![GH_EnvironmentVariable](Icons/gh_environmentvariable.png) | [GH_EnvironmentVariable](NodeDescriptions/GH_EnvironmentVariable.md) | GitHub Environment Variable |
@@ -31,9 +35,12 @@
 | ![GH_PersonalAccessToken](Icons/gh_personalaccesstoken.png) | [GH_PersonalAccessToken](NodeDescriptions/GH_PersonalAccessToken.md) | GitHub Personal Access Token |
 | ![GH_PersonalAccessTokenRequest](Icons/gh_personalaccesstokenrequest.png) | [GH_PersonalAccessTokenRequest](NodeDescriptions/GH_PersonalAccessTokenRequest.md) | GitHub Personal Access Token Request |
 | ![GH_RepoRole](Icons/gh_reporole.png) | [GH_RepoRole](NodeDescriptions/GH_RepoRole.md) | GitHub Repo Role |
+| ![GH_RepoRunner](Icons/gh_reporunner.png) | [GH_RepoRunner](NodeDescriptions/GH_RepoRunner.md) | GitHub Repo Self-Hosted Runner |
 | ![GH_RepoSecret](Icons/gh_reposecret.png) | [GH_RepoSecret](NodeDescriptions/GH_RepoSecret.md) | GitHub Repo Secret |
 | ![GH_Repository](Icons/gh_repository.png) | [GH_Repository](NodeDescriptions/GH_Repository.md) | GitHub Repository |
 | ![GH_RepoVariable](Icons/gh_repovariable.png) | [GH_RepoVariable](NodeDescriptions/GH_RepoVariable.md) | GitHub Repo Variable |
+| ![GH_OrgRunner](Icons/gh_orgrunner.png) | [GH_OrgRunner](NodeDescriptions/GH_OrgRunner.md) | GitHub Org Self-Hosted Runner |
+| ![GH_RunnerGroup](Icons/gh_runnergroup.png) | [GH_RunnerGroup](NodeDescriptions/GH_RunnerGroup.md) | GitHub Runner Group |
 | ![GH_SamlIdentityProvider](Icons/gh_samlidentityprovider.png) | [GH_SamlIdentityProvider](NodeDescriptions/GH_SamlIdentityProvider.md) | GitHub SAML Identity Provider |
 | ![GH_SecretScanningAlert](Icons/gh_secretscanningalert.png) | [GH_SecretScanningAlert](NodeDescriptions/GH_SecretScanningAlert.md) | GitHub Secret Scanning Alert |
 | ![GH_Team](Icons/gh_team.png) | [GH_Team](NodeDescriptions/GH_Team.md) | GitHub Team |
@@ -48,6 +55,7 @@
 | Relationship Kind | Traversable | Description |
 |-------------------|:-----------:|-------------|
 | [GH_AddAssignee](EdgeDescriptions/GH_AddAssignee.md) | ❌ | [Repository] Repo role can assign users to issues and pull requests |
+| [GH_AssignedTo](EdgeDescriptions/GH_AssignedTo.md) | ❌ | Structural assignment relationship showing that an enterprise team is assigned to an organization |
 | [GH_AddCollaborator](EdgeDescriptions/GH_AddCollaborator.md) | ❌ | [Organization] Org role can add outside collaborators |
 | [GH_AddLabel](EdgeDescriptions/GH_AddLabel.md) | ❌ | [Repository] Repo role can add labels to issues and pull requests |
 | [GH_AddMember](EdgeDescriptions/GH_AddMember.md) | ✅ | Team role can add members to the team (maintainer privilege) |
@@ -56,8 +64,10 @@
 | [GH_BypassPullRequestAllowances](EdgeDescriptions/GH_BypassPullRequestAllowances.md) | ❌ | User or team can bypass pull request requirements on a branch protection rule |
 | [GH_CanAccess](EdgeDescriptions/GH_CanAccess.md) | ❌ | Personal access token or app installation can access this repository or organization |
 | [GH_CanAssumeIdentity](EdgeDescriptions/GH_CanAssumeIdentity.md) | ✅ | Repository can assume this cloud identity via OIDC federation (Azure workload identity or AWS IAM role) |
+| [GH_CanDispatchTo](EdgeDescriptions/GH_CanDispatchTo.md) | ❌ | [Workflow] Job can dispatch to this self-hosted runner based on runs-on label matching and repository runner access |
+| [GH_CanUseRunner](EdgeDescriptions/GH_CanUseRunner.md) | ❌ | [Actions] Repository can dispatch jobs to this self-hosted runner |
 | [GH_CanCreateBranch](EdgeDescriptions/GH_CanCreateBranch.md) | ✅ | [Repository - Computed] Role can create new branches in this repository (unprotected branches that bypass the merge gate) |
-| [GH_CanEditProtection](EdgeDescriptions/GH_CanEditProtection.md) | ✅ | [Repository - Computed] Repo role can modify or remove the branch protection rules governing this branch (computed from GH_EditRepoProtections + GH_ProtectedBy) |
+| [GH_CanEditProtection](EdgeDescriptions/GH_CanEditProtection.md) | ✅ | [Repository - Computed] Repo role can modify or remove branch protection rules in this repository, with supporting branch-level edges for impacted protected branches |
 | [GH_CanPwnRequest](EdgeDescriptions/GH_CanPwnRequest.md) | ✅ | [Computed] Repo role can exploit a pwn-requestable workflow to execute arbitrary code with the target's secrets and permissions |
 | [GH_CanReadSecretScanningAlert](EdgeDescriptions/GH_CanReadSecretScanningAlert.md) | ✅ | [Computed] Role can read secret scanning alerts (computed from GH_ViewSecretScanningAlerts permission + GH_Contains) |
 | [GH_CanWriteBranch](EdgeDescriptions/GH_CanWriteBranch.md) | ✅ | [Repository - Computed] Role can push to this branch after evaluating branch protection rules, push restrictions, and bypass allowances |
@@ -65,7 +75,7 @@
 | [GH_CloseDiscussion](EdgeDescriptions/GH_CloseDiscussion.md) | ❌ | [Repository] Repo role can close discussions |
 | [GH_CloseIssue](EdgeDescriptions/GH_CloseIssue.md) | ❌ | [Repository] Repo role can close issues |
 | [GH_ClosePullRequest](EdgeDescriptions/GH_ClosePullRequest.md) | ❌ | [Repository] Repo role can close pull requests |
-| [GH_Contains](EdgeDescriptions/GH_Contains.md) | ❌ | Container relationship for organizational hierarchy (org contains secrets/variables, repo contains secrets/variables, environment contains secrets/variables) |
+| [GH_Contains](EdgeDescriptions/GH_Contains.md) | ❌ | Container relationship for organizational hierarchy (enterprise contains orgs and enterprise teams, org contains secrets/variables, repo contains secrets/variables, environment contains secrets/variables) |
 | [GH_ConvertIssuesToDiscussions](EdgeDescriptions/GH_ConvertIssuesToDiscussions.md) | ❌ | [Repository] Repo role can convert issues to discussions |
 | [GH_CreateDiscussionCategory](EdgeDescriptions/GH_CreateDiscussionCategory.md) | ❌ | [Repository] Repo role can create discussion categories |
 | [GH_CreateRepository](EdgeDescriptions/GH_CreateRepository.md) | ❌ | [Organization] Org role can create repositories in the organization |
@@ -91,10 +101,11 @@
 | [GH_HasEnvironment](EdgeDescriptions/GH_HasEnvironment.md) | ❌ | Repository or branch has/can deploy to this environment |
 | [GH_HasExternalIdentity](EdgeDescriptions/GH_HasExternalIdentity.md) | ❌ | SAML identity provider has this external identity |
 | [GH_HasJob](EdgeDescriptions/GH_HasJob.md) | ✅ | Workflow contains this job |
+| [GH_HasMember](EdgeDescriptions/GH_HasMember.md) | ❌ | Enterprise or organization has this user as a member |
 | [GH_HasPersonalAccessToken](EdgeDescriptions/GH_HasPersonalAccessToken.md) | ❌ | User owns this personal access token that has been granted access to the organization |
 | [GH_HasPersonalAccessTokenRequest](EdgeDescriptions/GH_HasPersonalAccessTokenRequest.md) | ❌ | User has a pending personal access token request for the organization |
 | [GH_HasRole](EdgeDescriptions/GH_HasRole.md) | ✅ | User or team has a role assignment (org role, team role, or repo role) |
-| [GH_HasSamlIdentityProvider](EdgeDescriptions/GH_HasSamlIdentityProvider.md) | ❌ | Organization has this SAML identity provider configured |
+| [GH_HasSamlIdentityProvider](EdgeDescriptions/GH_HasSamlIdentityProvider.md) | ❌ | Organization or enterprise has this SAML identity provider configured |
 | [GH_HasSecret](EdgeDescriptions/GH_HasSecret.md) | ✅ | Repository or environment has access to this secret |
 | [GH_HasStep](EdgeDescriptions/GH_HasStep.md) | ✅ | Job contains this step |
 | [GH_HasVariable](EdgeDescriptions/GH_HasVariable.md) | ✅ | Repository has access to this variable (org-level or repo-level) |
@@ -115,7 +126,7 @@
 | [GH_ManageWebhooks](EdgeDescriptions/GH_ManageWebhooks.md) | ❌ | [Repository] Repo role can manage repository webhooks |
 | [GH_MapsToUser](EdgeDescriptions/GH_MapsToUser.md) | ❌ | External identity maps to a GitHub user or identity provider user |
 | [GH_MarkAsDuplicate](EdgeDescriptions/GH_MarkAsDuplicate.md) | ❌ | [Repository] Repo role can mark issues or pull requests as duplicates |
-| [GH_MemberOf](EdgeDescriptions/GH_MemberOf.md) | ✅ | Team role is a member of a team, or team is a nested member of a parent team |
+| [GH_MemberOf](EdgeDescriptions/GH_MemberOf.md) | ✅ | Team role is a member of a team or enterprise team, or team is a nested/projection member of another team |
 | [GH_OrgBypassCodeScanningDismissalRequests](EdgeDescriptions/GH_OrgBypassCodeScanningDismissalRequests.md) | ❌ | [Organization] Org role can bypass code scanning dismissal requests |
 | [GH_OrgBypassSecretScanningClosureRequests](EdgeDescriptions/GH_OrgBypassSecretScanningClosureRequests.md) | ❌ | [Organization] Org role can bypass secret scanning closure requests |
 | [GH_OrgReviewAndManageSecretScanningBypassRequests](EdgeDescriptions/GH_OrgReviewAndManageSecretScanningBypassRequests.md) | ❌ | [Organization] Org role can review and manage secret scanning bypass requests |

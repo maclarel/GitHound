@@ -1,8 +1,12 @@
 # <img src="../Icons/gh_samlidentityprovider.png" width="50"/> GH_SamlIdentityProvider
 
-Represents a SAML identity provider configured for the organization. This node captures the SAML SSO configuration details and serves as the parent container for external identity mappings. Through external identities, it enables linking GitHub users to their corporate identities in the identity provider.
+Represents a SAML identity provider configured for either an organization or an enterprise. This node captures the SAML SSO configuration details and serves as the parent container for external identity mappings. Through external identities, it enables linking GitHub users to their corporate identities in the identity provider.
 
-Created by: `Git-HoundGraphQlSamlProvider`
+In GitHound's SAML and hybrid outputs, this GitHub-native node is also normalized into the shared SAML model through `GH_SamlIdentityProvider -[:SAML_Implements]-> SAML_ServiceProvider`. That normalized `SAML_ServiceProvider` carries the GitHub SP entity ID, ACS URLs, issuer trust, and SSO URL while preserving `GH_SamlIdentityProvider` as the native source record.
+
+From there, GitHound emits `SAML_ServiceProvider -[:SAML_HasAssertionConsumerService]-> SAML_AssertionConsumerService` for the GitHub ACS endpoints and `SAML_ServiceProvider -[:SAML_TrustsIssuer]-> SAML_Issuer` for the upstream IdP issuer value collected from the native provider.
+
+Created by: `Git-HoundGraphQlSamlProvider`, `Git-HoundEnterpriseSamlProvider`
 
 ## Properties
 
@@ -11,8 +15,8 @@ Created by: `Git-HoundGraphQlSamlProvider`
 | objectid              | string    | The GraphQL ID of the SAML identity provider.              |
 | name                  | string    | Same as objectid.                                          |
 | node_id               | string    | Same as objectid.                                          |
-| environment_name      | string    | The name of the environment (GitHub organization).         |
-| environmentid         | string    | The GraphQL ID of the environment (GitHub organization).   |
+| environment_name      | string    | The name of the environment where the provider is configured (GitHub organization or enterprise). |
+| environmentid         | string    | The GraphQL ID of the environment where the provider is configured (GitHub organization or enterprise). |
 | foreign_environmentid | string    | The ID of the foreign environment linked to this provider. |
 | digest_method         | string    | The digest method used by the SAML provider.               |
 | idp_certificate       | string    | The identity provider's X.509 certificate.                 |
@@ -24,11 +28,19 @@ Created by: `Git-HoundGraphQlSamlProvider`
 
 ```mermaid
 flowchart TD
+    GH_Enterprise[fa:fa-globe GH_Enterprise]
     GH_Organization[fa:fa-building GH_Organization]
     GH_SamlIdentityProvider[fa:fa-id-badge GH_SamlIdentityProvider]
     GH_ExternalIdentity[fa:fa-arrows-left-right GH_ExternalIdentity]
+    SAML_ServiceProvider[fa:fa-shield SAML_ServiceProvider]
+    SAML_AssertionConsumerService[fa:fa-right-to-bracket SAML_AssertionConsumerService]
+    SAML_Issuer[fa:fa-certificate SAML_Issuer]
 
 
+    GH_Enterprise -.->|GH_HasSamlIdentityProvider| GH_SamlIdentityProvider
     GH_Organization -.->|GH_HasSamlIdentityProvider| GH_SamlIdentityProvider
     GH_SamlIdentityProvider -.->|GH_HasExternalIdentity| GH_ExternalIdentity
+    GH_SamlIdentityProvider -.->|SAML_Implements| SAML_ServiceProvider
+    SAML_ServiceProvider -.->|SAML_HasAssertionConsumerService| SAML_AssertionConsumerService
+    SAML_ServiceProvider -.->|SAML_TrustsIssuer| SAML_Issuer
 ```

@@ -186,6 +186,66 @@ LIMIT 1000
 
 This query can be imported into BloodHound from the [dangerous-branch-perms.json](../saved-queries/dangerous-branch-perms.json) file.
 
+## Enterprise to Organization Hierarchy
+
+Returns enterprises and the organizations they structurally contain.
+
+```cypher
+MATCH p=(enterprise:GH_Enterprise)-[:GH_Contains]->(org:GH_Organization)
+RETURN p
+LIMIT 1000
+```
+
+This query is helpful for validating enterprise discovery before running full organization collection.
+
+## Enterprise Members
+
+Returns enterprises and the users that are direct members of those enterprises.
+
+```cypher
+MATCH p=(enterprise:GH_Enterprise)-[:GH_HasMember]->(user:GH_User)
+RETURN p
+LIMIT 1000
+```
+
+This query is useful for validating enterprise member discovery and Enterprise Managed Users handling.
+
+## Enterprise Admins
+
+Returns enterprise admins through the default `owners` enterprise role.
+
+```cypher
+MATCH p=(:GH_User)-[:GH_HasRole]->(:GH_EnterpriseRole {short_name:'owners'})
+RETURN p
+LIMIT 1000
+```
+
+This query is useful for validating the `ownerInfo.admins` enterprise admin path.
+
+## Enterprise Role Assignments
+
+Returns enterprise roles and the users or enterprise teams assigned to them.
+
+```cypher
+MATCH p=(principal)-[:GH_HasRole]->(role:GH_EnterpriseRole)
+RETURN p
+LIMIT 1000
+```
+
+This query is useful for validating enterprise authorization modeling before expanding enterprise-role permissions further.
+
+### Enterprise Team Assignments and Projections
+
+Returns enterprise teams, the organizations they are assigned to, and any projected `ent:` organization teams linked back to them.
+
+```cypher
+MATCH p=(entTeam:GH_EnterpriseTeam)-[:GH_AssignedTo]->(org:GH_Organization)
+OPTIONAL MATCH p2=(entTeam)-[:GH_MemberOf]->(team:GH_Team)
+RETURN p, p2
+```
+
+This query is useful for validating enterprise team collection and confirming that projected organization teams were linked back to their enterprise teams.
+
 ## Organizations with default repository permission
 
 Returns organizations that have a default repository permission other than 'none'.
@@ -565,7 +625,7 @@ Finds SAML Identity Providers, their external identities, and mapped users.
 
 ```cypher
 MATCH p=(OIP:GH_SamlIdentityProvider)-[:GH_HasExternalIdentity]->(EI:GH_ExternalIdentity)
-MATCH p1=(OIP)<-[:GH_HasSamlIdentityProvider]-(:GH_Organization)
+MATCH p1=(OIP)<-[:GH_HasSamlIdentityProvider]-(:GH_Organization|GH_Enterprise)
 MATCH p2=(EI)-[:GH_MapsToUser]->()
 RETURN p,p1,p2
 LIMIT 1000
@@ -686,4 +746,3 @@ LIMIT 1000
 ```
 
 This query can be imported into BloodHound from the [web-commit-signoff-not-required.json](../saved-queries/web-commit-signoff-not-required.json) file.
-

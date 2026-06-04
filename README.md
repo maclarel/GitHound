@@ -46,6 +46,164 @@ If collection is interrupted, resume from where you left off:
 Invoke-GitHound -Session $session -Resume
 ```
 
+## GitHub App Sessions
+
+GitHound supports both Personal Access Token sessions and GitHub App installation sessions.
+The existing organization-scoped GitHub App workflow is unchanged:
+
+```powershell
+. ./githound.ps1
+
+$session = New-GitHubJwtSession `
+  -OrganizationName "YourOrgName" `
+  -ClientId $clientId `
+  -PrivateKeyPath $privateKeyPath `
+  -InstallationId $installationId
+
+Invoke-GitHound -Session $session -CollectAll
+```
+
+The same function can also create enterprise-capable sessions:
+
+```powershell
+. ./githound.ps1
+
+$session = New-GitHubJwtSession `
+  -EnterpriseName "YourEnterpriseSlug" `
+  -ClientId $clientId `
+  -PrivateKeyPath $privateKeyPath `
+  -InstallationId $installationId `
+  -PersonalAccessToken $pat
+```
+
+Enterprise-capable sessions retain multiple auth contexts on the returned `GitHound.Session`:
+
+- `Headers`: the GitHub App installation token headers used for normal collection
+- `JwtHeaders`: GitHub App JWT headers used for app-level endpoints such as installation enumeration
+- `PatHeaders`: optional Personal Access Token headers for collection paths that require user-token auth
+
+To enumerate the installations that belong to the authenticated GitHub App:
+
+```powershell
+Get-GitHubAppInstallation -Session $session |
+  Select-Object TargetType, InstallationId, Login, Name, SuspendedAt
+```
+
+## Workflow Analysis
+
+Workflow parsing is now built into `Invoke-GitHound` when you use `-CollectAll`. The collector
+will:
+
+- collect raw `GH_Workflow` nodes and workflow contents
+- analyze those workflows into `GH_WorkflowJob` and `GH_WorkflowStep`
+- compute `GH_CanPwnRequest` and `GH_CanDispatchTo`
+- merge the results into the normal consolidated `githound_<orgId>.json` output
+
+For resume/debugging purposes, the intermediate workflow-analysis checkpoint is written as
+`githound_WorkflowAnalysis_<orgId>.json`.
+
+## Enterprise Collection Foundation
+
+GitHound now includes a minimal enterprise collection foundation through `Git-HoundEnterprise`.
+That collector currently creates:
+
+- `GH_Enterprise`
+- lightweight `GH_Organization` stub nodes for member organizations
+- `GH_Contains` edges from the enterprise to its organizations
+
+Enterprise user collection through `Git-HoundEnterpriseUser` adds:
+
+- `GH_User`
+- `GH_HasMember` edges from the enterprise to those users
+
+Enterprise SAML collection through `Git-HoundEnterpriseSamlProvider` adds:
+
+- `GH_SamlIdentityProvider`
+- `GH_ExternalIdentity`
+- `GH_HasSamlIdentityProvider` from the enterprise to the provider
+- the same identity-correlation edges used by the organization SAML collector
+
+This path requires a PAT-backed session because GitHub exposes enterprise SAML through
+`enterprise.ownerInfo`.
+
+Enterprise team collection through `Git-HoundEnterpriseTeam` adds:
+
+- `GH_EnterpriseTeam`
+- `GH_AssignedTo` edges from enterprise teams to assigned organizations
+- `GH_MemberOf` edges from enterprise teams to org-visible `ent:` `GH_Team` nodes using property matching
+- enterprise-team `members` roles and `GH_HasRole` edges from users to those roles
+
+Enterprise role collection through `Git-HoundEnterpriseRole` adds:
+
+- `GH_EnterpriseRole`
+- `GH_Contains` edges from the enterprise to those roles
+- `GH_HasRole` edges from directly assigned users and enterprise teams
+- a default `owners` role populated from `enterprise.ownerInfo.admins` when PAT-backed enterprise admin data is available
+
+For now, raw enterprise permission strings are preserved on the `GH_EnterpriseRole` node in its `permissions` property rather than being expanded into dedicated permission edges.
+
+Enterprise SCIM collection currently adds:
+
+- `SCIM_User`
+- `SCIM_Group`
+- `SCIM_Provisioned` from `SCIM_User` to `GH_ExternalIdentity`
+- `SCIM_Provisioned` from `SCIM_Group` to `GH_EnterpriseTeam` when GitHub exposes the enterprise team `group_id`
+- `SCIM_MemberOf` from `SCIM_User` to `SCIM_Group`
+
+This gives GitHound a provider-agnostic bridge from the shared SCIM schema into GitHub's native enterprise identity and team model.
+
+When a collected `GH_SamlIdentityProvider` identifies the upstream IdP, GitHound can also add provider-aware SCIM correlation edges inside the SCIM sidecar output:
+
+- `Okta_User -> SCIM_User`
+  - matched by `Okta_User.id = SCIM_User.externalId`
+- `Okta_Group -> SCIM_Group`
+  - matched by `Okta_Group.name = SCIM_Group.externalId`
+  - and `Okta_Group.oktaDomain = GH_SamlIdentityProvider.foreign_environmentid`
+
+GitHound keeps the SCIM layer in its own sidecar output so these mappings remain visible without mixing SCIM-native nodes into the main GitHub-native enterprise graph:
+
+- `githound_<entId>.json` contains enterprise GitHub-native data
+- `githound_scim_<entId>.json` contains SCIM-native nodes and SCIM bridge edges
+- `githound_saml_<entId>.json` contains SAML and external identity data
+- `githound_hybrid_<entId>.json` contains cross-model edges such as `SAML_Implements`, `SAML_HasAccount`, and `GH_SyncedTo`
+- `githound_saml_<entId>.json` also contains the normalized SAML topology for the GitHub service provider, including `SAML_TrustsIssuer` and `SAML_HasAssertionConsumerService`
+
+The native GitHub identity-provider model remains intact in the GitHub/SAML-native outputs:
+
+- `GH_ExternalIdentity`
+- `GH_HasExternalIdentity`
+- `GH_MapsToUser`
+
+The normalized SAML layer in `githound_hybrid_<entId>.json` now lands `SAML_HasAccount` directly on `GH_User`, while deriving `match_values` from the linked `GH_ExternalIdentity` SAML-facing properties such as `saml_identity_name_id` and `saml_identity_username`.
+
+The `GH_Organization` stubs emitted by enterprise collection are intentionally marked
+`collected = false`. They represent structural discovery from the enterprise context and are
+meant to be enriched later by normal organization collection.
+
+For enterprise-first orchestration, `Invoke-GitHoundEnterprise` will collect the supported
+enterprise-scoped data, enumerate related organization installations, and then run the
+existing `Invoke-GitHound` workflow for each organization in its own subdirectory under the
+chosen checkpoint path.
+
+Example:
+
+```powershell
+$session = New-GitHubJwtSession `
+  -EnterpriseName "your-enterprise-slug" `
+  -ClientId $clientId `
+  -PrivateKeyPath $privateKeyPath `
+  -InstallationId $enterpriseInstallationId `
+  -PersonalAccessToken $pat
+
+Invoke-GitHoundEnterprise -Session $session -CheckpointPath "./output/your-enterprise" -CollectAll
+```
+
+For enterprise-only testing without enumerating the related organizations:
+
+```powershell
+Invoke-GitHoundEnterprise -Session $session -CheckpointPath "./output/your-enterprise" -EnterpriseOnly
+```
+
 ## Schema
 
 ![Mermaid Schema](./Documentation/images/GitHound-Mermaid.png)

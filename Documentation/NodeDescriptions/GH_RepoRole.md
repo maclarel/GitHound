@@ -8,7 +8,7 @@ Created by: `Git-HoundRepository`
 
 | Property Name    | Data Type | Description                                                                                      |
 | ---------------- | --------- | ------------------------------------------------------------------------------------------------ |
-| objectid         | string    | A deterministic ID derived from the repo node_id and role name.                                  |
+| objectid         | string    | A deterministic synthetic ID in the form `{repoNodeId}_{roleName}` such as `{repoNodeId}_read`, `{repoNodeId}_write`, or `{repoNodeId}_{customRoleName}`. |
 | name             | string    | The fully qualified role name (e.g., `repoName\read`).                                           |
 | id               | string    | Same as objectid.                                                                                |
 | short_name       | string    | The short role name (e.g., `read`, `write`, `admin`, `triage`, `maintain`, or custom role name). |
@@ -47,6 +47,7 @@ flowchart TD
     GH_RepoRole -.->|GH_CreateTag| GH_Repository
     GH_RepoRole -.->|GH_DeleteTag| GH_Repository
     GH_RepoRole -->|GH_HasBaseRole| GH_RepoRole
+    GH_RepoRole -->|GH_CanEditProtection| GH_Repository
     GH_RepoRole -->|GH_CanEditProtection| GH_Branch
     GH_RepoRole -->|GH_CanWriteBranch| GH_Branch
     GH_RepoRole -->|GH_CanCreateBranch| GH_Repository
